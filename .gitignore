@@ -12,3 +12,4 @@ data/*.bag
 venv
 .vscode
 traffic_light_bag*
+ros/src/twist_controller/*.csv
