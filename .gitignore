@@ -4,3 +4,11 @@ build
 devel
 
 profile.tmp
+
+.idea
+catkin_ws
+
+data/*.bag
+venv
+.vscode
+traffic_light_bag*
