@@ -1,0 +1,9 @@
+data/*
+ros/*
+.idea
+.thumbnails
+imgs
+venv
+*.zip
+**/.git
+catkin_ws

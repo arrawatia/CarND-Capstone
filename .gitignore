@@ -13,3 +13,11 @@ venv
 .vscode
 traffic_light_bag*
 ros/src/twist_controller/*.csv
+log/*
+
+
+traffic_light_detection/tf-models
+traffic_light_detection/models/*
+traffic_light_detection/data-downloads
+traffic_light_detection/data/*.record
+.ipynb_checkpoints

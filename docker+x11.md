@@ -21,7 +21,7 @@ docker run \
     -e DISPLAY=$IP:0 \
     -v /tmp/.X11-unix:/tmp/ \
     -v $PWD:/capstone \
-    -v /tmp/log:/root/.ros/ \
+    -v $PWD/log:/root/.ros/ \
     -v $PWD/.bash_history:/root/.bash_history \
     -v $PWD/.bashrc:/root/.bashrc \
     capstone -- tail -f /dev/null
