@@ -15,13 +15,10 @@ from std_msgs.msg import Int32
 from styx_msgs.msg import Lane, TrafficLightArray, TrafficLight
 
 STATE_COUNT_THRESHOLD = 3
-# Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
-# False for Model Prediction Traffic Data
-TEST_MODE_ENABLED = False
+USE_SIMULATOR_LIGHT_CLASS = False
 SAVE_IMAGES = False
-LOGGING_THROTTLE_FACTOR = 5  # Only log at this rate (1 / Hz)
-CAMERA_SAMPLING_FREQUENCY = 10
-
+IMAGE_SAMPLING_FREQUENCY = 5
+LOGGING_FREQUENCY = 5
 
 class TLDetector(object):
 
@@ -40,6 +37,8 @@ class TLDetector(object):
         self.bridge = CvBridge()
 
         self.light_classifier = TLClassifier(rospy.get_param('~model_file'))
+        self.camera_sampling_frequency = int(rospy.get_param('~camera_sampling_frequency'))
+
         self.listener = tf.TransformListener()
 
         self.state = TrafficLight.UNKNOWN
@@ -131,8 +130,9 @@ class TLDetector(object):
         if closest_light:
             self.process_count += 1
             state = self.get_light_state(closest_light)
-            if (self.process_count % LOGGING_THROTTLE_FACTOR) == 0:
-                rospy.logwarn("DETECT: line_wp_idx={}, state={}".format(line_wp_idx, self.to_string(state)))
+            if (self.process_count % LOGGING_FREQUENCY) == 0:
+                rospy.logwarn("{} : DETECT line_wp_idx={}, state={}".format(self.__class__.__name__, line_wp_idx,
+                                                                            self.state_to_string(state)))
 
         return line_wp_idx, state
 
@@ -155,13 +155,13 @@ class TLDetector(object):
         """
 
         # For test mode, just return the light state
-        if TEST_MODE_ENABLED:
+        if USE_SIMULATOR_LIGHT_CLASS:
             classification = light.state
         else:
             self.camera_image_count += 1
             classification = self.previous_classification
             total = 0
-            if (self.camera_image_count % CAMERA_SAMPLING_FREQUENCY) == 0:
+            if (self.camera_image_count % self.camera_sampling_frequency) == 0:
                 start = datetime.datetime.now()
                 cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
@@ -173,17 +173,15 @@ class TLDetector(object):
 
                 rospy.logwarn("{}: {} classification={}, sec={}, used={}".format(
                     self.__class__.__name__, self.camera_image_count, classification, total,
-                    (self.camera_image_count % CAMERA_SAMPLING_FREQUENCY) == 0))
+                    (self.camera_image_count % self.camera_sampling_frequency) == 0))
 
-
-        # Save image (throttled)
-        # if SAVE_IMAGES and (self.process_count % LOGGING_THROTTLE_FACTOR == 0):
-        #     save_file = "../../../imgs/{}-{:.0f}.jpeg".format(self.to_string(classification), (time.time() * 100))
+        # if SAVE_IMAGES and (self.process_count % IMAGE_SAMPLING_FREQUENCY == 0):
+        #     save_file = "../../../images/{}-{:.0f}.jpeg".format(self.to_string(classification), (time.time() * 100))
         #     cv2.imwrite(save_file, cv_image)
 
         return classification
 
-    def to_string(self, state):
+    def state_to_string(self, state):
         out = "unknown"
         if state == TrafficLight.GREEN:
             out = "green"

@@ -2,5 +2,6 @@
 <launch>
     <node pkg="tl_detector" type="tl_detector.py" name="tl_detector" output="screen" cwd="node">
         <param name="model_file" value="udacity_simulator/frozen_inference_graph.pb" />
+        <param name="camera_sampling_frequency" value="5" />
     </node>
 </launch>

@@ -25,12 +25,12 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 50  # Number of waypoints we will publish.
-CONSTANT_DECEL = 1 / LOOKAHEAD_WPS  # Deceleration constant for smoother braking
-PUBLISHING_RATE = 20  # Rate (Hz) of waypoint publishing
+LOOKAHEAD_WPS = 50
+CONSTANT_DECEL = 1 / LOOKAHEAD_WPS
+PUBLISHING_RATE = 20
 MAX_DECEL = 0.5
-STOP_LINE_MARGIN = 4  # Distance in waypoints to pad in front of the stop line
-LOGGING_THROTTLE_FACTOR = PUBLISHING_RATE * 2  # Only log at this rate (1 / Hz)
+STOP_LINE_MARGIN = 4
+LOGGING_THROTTLE_FACTOR = PUBLISHING_RATE * 2
 
 
 class WaypointUpdater(object):
@@ -118,7 +118,7 @@ class WaypointUpdater(object):
             size = len(waypoints) - 1
             vel_start = temp[0].twist.twist.linear.x
             vel_end = temp[size].twist.twist.linear.x
-            rospy.logwarn("deceleration -> vel[0]={:.2f}, vel[{}]={:.2f}".format(vel_start, size, vel_end))
+            rospy.logwarn("{} : DECELERATE  vel[0]={:.2f}, vel[{}]={:.2f}".format(self.__class__.__name__, vel_start, size, vel_end))
         return temp
 
     def pose_cb(self, msg):
@@ -134,7 +134,7 @@ class WaypointUpdater(object):
     def traffic_cb(self, msg):
         if self.stopline_wp_idx != msg.data:
             rospy.logwarn(
-                "light -> new stopline_wp_idx={}, old stopline_wp_idx={}".format(msg.data, self.stopline_wp_idx))
+                "{} : LIGHT new stopline_wp_idx={}, old stopline_wp_idx={}".format(self.__class__.__name__, msg.data, self.stopline_wp_idx))
             self.stopline_wp_idx = msg.data
 
     def obstacle_cb(self, msg):
