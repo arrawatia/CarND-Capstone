@@ -87,7 +87,7 @@ The goal is to classify the image into one of the 4 categories
 I started by finishing up Udacity's Object detection lab and 
 worked through the [Step by Step TensorFlow Object Detection API Tutorial](https://medium.com/@WuStangDan/step-by-step-tensorflow-object-detection-api-tutorial-part-1-selecting-a-model-a02b6aabe39e)
 
-The model was built in 4 steps:
+The model was built in the following steps:
 
 #### Step 1: Build the dataset
 
@@ -97,7 +97,7 @@ After we get the data, it has to be labelled manually. The  [Step by Step Tensor
  
 Once the data is collected and labelled, we need to convert the data into `TFRecord` format. The TensorFlow Object Detection API requires all the labeled training data to be in `TFRecord` file format.  
 
-I started doing this but found that labelled datasets were made graciouly available by former students. So, I decided to use the 2 of many available datasets - one each for validation and training. 
+I started doing this but found that labelled datasets were made graciouly available by former students. So, I decided to use two out of many available datasets - one each for validation and training. 
  
 - Training - [coldknight's dataset](https://github.com/coldKnight/TrafficLight_Detection-TensorFlowAPI#get-the-dataset)
 
@@ -116,7 +116,7 @@ Rather than training and building such a model from scratch, I used **Transfer L
 
 The Transfer Learning process is described in the **Training Setup** section of the [setup guide](setup.md).
 
-I started by using the [Faster RCNN Resnet101 Coco ](http://download.tensorflow.org/models/object_detection/faster_rcnn_resnet101_coco_11_06_2017.tar.gz) and [Faster RCNN Inception V2 Coco](http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz) models used in the Object Detection lab. These models have really good accuracy but I couldnot get these models to perform fast enough to be usable in simulator testing. 
+I started by using the [Faster RCNN Resnet101 Coco ](http://download.tensorflow.org/models/object_detection/faster_rcnn_resnet101_coco_11_06_2017.tar.gz) and [Faster RCNN Inception V2 Coco](http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz) models used in the Object Detection lab. These models have really good accuracy but I could not get these models to perform fast enough to be usable in simulator testing. 
 
 
 I read that others were having success using [SSD Inception V2 Coco]( http://download.tensorflow.org/models/object_detection/ssd_inception_v2_coco_2017_11_17.tar.gz) and moved to this as well. This model is sufficiently fast in testing but doesnot generalize well. So, I trained a different model for each (simulator and site) dataset.
@@ -132,12 +132,12 @@ This jupyter notebook [traffic_light_detection/traffic_lights.ipynb](traffic_lig
 ## Reflection
 This project was a bittersweet experience. It was rewarding and satisfying at times and very frustrating other times.
 
-Learning about ROS was fun. It is interesting to work with a industrial grade framework and I appreciated the modular architecture. Only I got it working with Docker, developing and debugging the project went really fast.
+Learning about ROS was fun. It is interesting to work with a industrial grade framework and I appreciated the modular architecture. Once I got a working setup with Docker, the developing and debugging cycle went much faster.
 
-But it was very tricky to get it to work. I was working on a mac and the VM was very flaky. I decided to investigate using Docker but had trouble figuring out a working setup. I had issues with the install, the ports and getting the simulator to work. 
+But it was very tricky to get it to work. I was working on a Macbook and the Udacity VM was very flaky. I decided to investigate the Docker setup but had to solve issues with the install, port forwarding, the ROS cmake compilation and getting the simulator to work. 
 
-Using Transfer learning was a very practical way to use the pre-trained models. It was interesting to try out various models to see how and why they worked. I had never needed to think about speed of inference in the first term and it was a good lesson on the practical constraints of using these models for real-world scenarios.
+Using Transfer learning was a practical way to get a usable model in resonable amount of time. It was interesting to try out various models to see which one worked best. I had never needed to think about speed of inference in the first term and it was a good lesson on the practical constraints of using these models for real-world scenarios.
 
-But the entire cycle of training + validating + testing models is very tedious. This was my least favorite part of term 1 projects too. It was very hard to get the correct dependencies of TF + models.
+But the entire cycle of training + validating + testing models is very tedious. This was my least favorite part of Term 1 projects too. It was very hard to get the correct dependencies of TF 1.3 to match up the prebuilt models.
 
-I feel the 3 term structure was better. Doing this project well is 1-term's worth of work. I felt really rushed doing this project. The walkthroughs helped but I would have liked to figure it out on my own.
+I feel the 3 term structure was better. This project requires 1-term's worth of work. I felt really rushed doing this project. The walkthroughs helped but I would have liked to figure it out on my own.
