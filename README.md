@@ -1,20 +1,21 @@
 # Capstone project:  Programming a Real Self-Driving Car
 
-The goal of this project is to program Udacity's self driving car to drive around a test lot. 
+The goal of this project is to program Udacity's Self-Driving Car (Carla) to drive around a test lot. 
 
-This requires completing the ROS subsystems for planning, perception and control. The perception subsystem classifies the traffic lights based on camera images. The navigation subsystem plans the path of the car and and updates the waypoints to make the car stop at red lights. The control subsytem uses "drive by wire" to move the car along waypoints at the correct velocity. 
+This requires completing the ROS subsystems for planning, perception and control. The perception subsystem classifies the traffic lights based on camera images. The planning subsystem plans the path of the car and and updates the waypoints to make the car stop at red lights. The control subsytem uses "drive by wire" to move the car along waypoints at the correct velocity. 
 
 I built the project in the 2 stages
 
-1. Planning and Control
+**1. Planning and Control**
+
 I completed the ROS modules for planning and control. The car drove successfully around the track while stopping at red lights. The perception module is mocked out using the data from the simulator.
-2. Perception
+
+**2. Perception**
+
 I built a deep learning model for classifying traffic light images and used the model in the ROS module for traffic light detection. The car stopped at red lights by correcting classifying the images.
 
 
-The document starts by describing the overall architecture of Carla. It discusses how all the subsystems interact and work together. 
-
-It then describes the implementation of the planning and control modules followed by the implementation details of the traffic light classifier.
+The document starts by describing the overall architecture of Carla. It discusses how all the subsystems interact and work together. It then describes the implementation of the planning and control modules followed by the implementation details of the traffic light classifier.
 
 
 ## Carla System Architecture
@@ -57,125 +58,86 @@ The goal to implement a drive-by-wire (DBW) node which uses controllers to provi
 
 A safety driver may take control of the car during testing. If this happens, the DBW status will change and the change is published on `/vehicle/dbw_enabled` topic.
 
-This requires changes to the DBW node which is responsible for steering the car. We change `dbw_node.py` to subscribe to the relevant topics and use the PID controller and lowpass filter in the twist controller (`twist_controller.py`) to calculate throttle, brake, and steering commands. We publish these commands to the `/vehicle/throttle_cmd`, `/vehicle/brake_cmd`, and `/vehicle/steering_cmd` topics respectively.
+This requires changes to the DBW node which is responsible for steering the car. We change `dbw_node.py` to subscribe to the relevant topics and use the PID controller and lowpass filter in the twist controller (`twist_controller.py`) to calculate throttle, brake, and steering commands. These commands are published to the `/vehicle/throttle_cmd`, `/vehicle/brake_cmd`, and `/vehicle/steering_cmd` topics respectively. 
 
 ### Perception
 
-The goal of this module is to 
+The goal of this module is to make sure that the car stops for red traffic lights. This is done in two parts:
 
-2 modules:
+**1. Find the upcoming traffic light** 
 
-1. Obstacle detection 
+We use the vehicle location and find the closest visible traffic light ahead in the `process_traffic_lights` method of `tl_detector.py`. We find the closest waypoints to the vehicle and lights and then use this to find which light is ahead of the vehicle along the list of waypoints.
 
- tl_detector.py. This node takes in data from the /image_color, /current_pose, and /base_waypoints topics and publishes the locations to stop for red traffic lights to the /traffic_waypoint topic.
+**2. Classify the color of the light using the camera images**
 
-Detection: Detect the traffic light and its color from the /image_color. The topic /vehicle/traffic_lights contains the exact location and status of all traffic lights in simulator, so you can test your output
+I used a deep learning classifier to classify the entire image into one of 4 categories: a red light, yellow light, green light, or no light. 
 
-Waypoint publishing: Once you have correctly identified the traffic light and determined its position, you can convert it to a waypoint index and publish it.
-
-
-2. Traffic light detection
+This is described in the Deep Learning model section below.
 
 
-- Uses deep learning. 
-- 
+### Deep Learning model for Traffic Light Detection
+
+The goal is to classify the image into one of the 4 categories
+
+1. Red Light
+2. Green Light
+3. Yellow Light
+4. No Light
 
 I started by finishing up Udacity's Object detection lab and 
 worked through the [Step by Step TensorFlow Object Detection API Tutorial](https://medium.com/@WuStangDan/step-by-step-tensorflow-object-detection-api-tutorial-part-1-selecting-a-model-a02b6aabe39e)
 
-Classification
+The model was built in 4 steps:
 
-The classification output has four categories: Red, Green, Yellow and off. To simplify, the final output will be Red or Non-Red, that is only the Red will be classified as TrafficLight.RED, and the other cases will be classified as TrafficLight.GREEN.
+#### Step 1: Build the dataset
 
-- Build the dataset 
-    1. Collect images There are 2 sources of traffic light images, one for each scenario.
+We need data for training the deep learning model. We have 2 sources of data: images from the simlulator and actual site images in the form of a rosbag.
 
-        1. Site testing data: Udacity provided a ROSbag file from Carla
-        The code here gets the raw data for simulator. Link to the tl_detector code
+After we get the data, it has to be labelled manually. The  [Step by Step TensorFlow Object Detection API Tutorial](https://medium.com/@WuStangDan/step-by-step-tensorflow-object-detection-api-tutorial-part-1-selecting-a-model-a02b6aabe39e) describes a way to do this using the **LabelImg** tool.
+ 
+Once the data is collected and labelled, we need to convert the data into `TFRecord` format. The TensorFlow Object Detection API requires all the labeled training data to be in `TFRecord` file format.  
 
-        2. Udacity Unity Simulator: Save Traffic lights image data from Udacity's simulator in the code
-        Extract it from the site testing ROS bag. Link to setup
+I started doing this but found that labelled datasets were made graciouly available by former students. So, I decided to use the 2 of many available datasets - one each for validation and training. 
+ 
+- Training - [coldknight's dataset](https://github.com/coldKnight/TrafficLight_Detection-TensorFlowAPI#get-the-dataset)
 
-
-
-
--  Step 2: Label the data by hand 
-    Using the **LabelImg** tool as described in [Step by Step TensorFlow Object Detection API Tutorial](https://medium.com/@WuStangDan/step-by-step-tensorflow-object-detection-api-tutorial-part-1-selecting-a-model-a02b6aabe39e). 
-
-- Step 3: Create a TFRecord file from the labelled dataset 
-The TensorFlow Object Detection API requires all the labeled training data to be in `TFRecord` file format.  
+- Validation - [Alex Lechner's dataset](https://www.dropbox.com/s/vaniv8eqna89r20/alex-lechner-udacity-traffic-light-dataset.zip?dl=0)
 
 
-I started doing this and then read a chat mentioning labelled datasets were made graciouly available by former students. 
+#### Step 2 : Choose a model 
 
-I did not see any value in spending a significant amount of time on handlabelling the data.
+Our model needs to detect traffic lights in the image and classify the light color, if it finds one.
 
-I downloaded the following datasets (one for validation and one for training). The images in the dataset are labeled and both the datasets come with a `TFRecord` file.
+So, we need a model that can detect objects or identify "what" objects are inside of an image (classification) and "where" they are (localization). Given an input image, the model should give us a list of objects, their classes and bounding box coordinates. 
 
-    - Validation dataset [Alex Lechner's dataset](https://www.dropbox.com/s/vaniv8eqna89r20/alex-lechner-udacity-traffic-light-dataset.zip?dl=0)
-    - Training dataset [coldknight's dataset](https://github.com/coldKnight/TrafficLight_Detection-TensorFlowAPI#get-the-dataset)
+I used a **Single-Shot Detector (SSD)** model to do this. A SSD is a multi-scale sliding window detector that uses deep CNNs for both classification and localization. It slides a local window across the image and identifies at each location whether the window contains any object of interests or not. Multi-scale increases the robustness of the detection by considering windows of different sizes. 
 
+Rather than training and building such a model from scratch, I used **Transfer Learning** to adapt one of pre-trained **Object Detection** models from the [Tensorflow Model Zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md). I chose to modify one of the pre-trained model that was designed to work on the 90 classes of the COCO dataset. I modified it to work on the 4 classes of the traffic light datasets.
 
+The Transfer Learning process is described in the **Training Setup** section of the [setup guide](setup.md).
 
-
-#### Training
-
-- SSD models from the lab 
-    The task of object detection is to identify "what" objects are inside of an image and "where" they are. Given an input image, the algorithm outputs a list of objects, each associated with a class label and location (usually in the form of bounding box coordinates). In practice, only limited types of objects of interests are considered and the rest of the image should be recognized as object-less background.
-
-Single-Shot Detector
-
-Let's first remind ourselves about the two main tasks in object detection: identify what objects in the image (classification) and where they are (localization). In essence, SSD is a multi-scale sliding window detector that leverages deep CNNs for both these tasks.
-
-A sliding window detection, as its name suggests, slides a local window across the image and identifies at each location whether the window contains any object of interests or not. Multi-scale increases the robustness of the detection by considering windows of different sizes. Such a brute force strategy can be unreliable and expensive: successful detection requests the right information being sampled from the image, which usually means a fine-grained resolution to slide the window and testing a large cardinality of local windows at each location.
+I started by using the [Faster RCNN Resnet101 Coco ](http://download.tensorflow.org/models/object_detection/faster_rcnn_resnet101_coco_11_06_2017.tar.gz) and [Faster RCNN Inception V2 Coco](http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz) models used in the Object Detection lab. These models have really good accuracy but I couldnot get these models to perform fast enough to be usable in simulator testing. 
 
 
-- COCO models
-detection models pre-trained on the COCO dataset,
-They are also useful for initializing your models when training on novel datasets.
+I read that others were having success using [SSD Inception V2 Coco]( http://download.tensorflow.org/models/object_detection/ssd_inception_v2_coco_2017_11_17.tar.gz) and moved to this as well. This model is sufficiently fast in testing but doesnot generalize well. So, I trained a different model for each (simulator and site) dataset.
 
-- Transfer learning - change the output from 
+#### Step 3: Train / Validate / Save the model
 
-    - Transfer learning is a machine learning method where a model developed for a task is reused as the starting point for a model on a second task.
-    It is a popular approach in deep learning where pre-trained models are used as the starting point on computer vision and natural language processing tasks given the vast compute and time resources required to develop neural network models on these problems and from the huge jumps in skill that they provide on related problems.
+The model was trained on AWS using the [coldknight's dataset](https://github.com/coldKnight/TrafficLight_Detection-TensorFlowAPI#get-the-dataset) and validated on [Alex Lechner's dataset](https://www.dropbox.com/s/vaniv8eqna89r20/alex-lechner-udacity-traffic-light-dataset.zip?dl=0)
 
-    - modify the pre-trained model that was designed to work on the 90 classes of the COCO dataset, to work on the 4 classes of my new dataset? y remove the last 90 neuron classification layer of the network and replace it with a new layer. To accomplish this with the object detection API, all you need to do is modify one line in the models config file. 
-    
+The final model was then frozen and used in simulator testing.
 
-Started with 
+This jupyter notebook [traffic_light_detection/traffic_lights.ipynb](traffic_light_detection/traffic_lights.ipynb) shows the models being used to classify 10 random images from both simulator and site datasets.
 
+## Reflection
+This project was a bittersweet experience. It was rewarding and satisfying at times and very frustrating other times.
 
-Faster_RCNN_Inception_ResNet 
-(http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz)
+Learning about ROS was fun. It is interesting to work with a industrial grade framework and I appreciated the modular architecture. Only I got it working with Docker, developing and debugging the project went really fast.
 
-RFCN_ResNet101 
-[faster rcnn resnet101]: http://download.tensorflow.org/models/object_detection/faster_rcnn_resnet101_coco_11_06_2017.tar.gz
+But it was very tricky to get it to work. I was working on a mac and the VM was very flaky. I decided to investigate using Docker but had trouble figuring out a working setup. I had issues with the install, the ports and getting the simulator to work. 
 
-Then moved to [ssd inception 171117]: http://download.tensorflow.org/models/object_detection/ssd_inception_v2_coco_2017_11_17.tar.gz
-                                ms
-ssd_inception_v2_coco	        42	24	Boxes
-faster_rcnn_inception_v2_coco	58	28	Boxes
-faster_rcnn_resnet101_coco	    106	32	Boxes
-ssdlite_mobilenet_v2_coco	27	22	Boxes
+Using Transfer learning was a very practical way to use the pre-trained models. It was interesting to try out various models to see how and why they worked. I had never needed to think about speed of inference in the first term and it was a good lesson on the practical constraints of using these models for real-world scenarios.
 
-SSD Inception V2 Coco (17/11/2017) Pro: Very fast, Con: Not good generalization on different data
-SSD Inception V2 Coco (11/06/2017) Pro: Very fast, Con: Not good generalization on different data
-Faster RCNN Inception V2 Coco (28/01/2018) Pro: Good precision and generalization of different data, Con: Slow
-Faster RCNN Resnet101 Coco (11/06/2017) Pro: Highly Accurate, Con: Very slow
+But the entire cycle of training + validating + testing models is very tedious. This was my least favorite part of term 1 projects too. It was very hard to get the correct dependencies of TF + models.
 
-
-Take a look at the 
-
-# Reflection
-Bittersweet 
-- Rewarding and satisfying at times and very frustrating other times
-- Learning about ROS was fun. It is industrial grade 
-- appreciated the architecture 
-- very tricky to get it to work (No mac support, VM flaky, DBW node missing) 
-
-- Transfer learning
-- very practical
-- But training models / validating / testing is very tedious
-- Hard to get the correct dependencies of TF + models
-
-- 3 term structure was better. This is 1-term's worth of work. Felt rushed. Walkthroughs helped but would have liked to figure it out on my own.
+I feel the 3 term structure was better. Doing this project well is 1-term's worth of work. I felt really rushed doing this project. The walkthroughs helped but I would have liked to figure it out on my own.

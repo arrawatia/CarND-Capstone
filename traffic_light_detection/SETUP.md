@@ -1,5 +1,5 @@
 
-# Setup
+# Tensorflow Setup
 
 The setup instructions here helped a lot in getting Tensorflow to work - [Alex Lechner's setup guide]
 
