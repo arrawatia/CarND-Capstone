@@ -1,5 +1,7 @@
 # Capstone project:  Programming a Real Self-Driving Car
 
+Individual submission by Sumit Arrawatia (sumit.arrawatia@gmail.com)
+
 The goal of this project is to program Udacity's Self-Driving Car (Carla) to drive around a test lot. 
 
 This requires completing the ROS subsystems for planning, perception and control. The perception subsystem classifies the traffic lights based on camera images. The planning subsystem plans the path of the car and and updates the waypoints to make the car stop at red lights. The control subsytem uses "drive by wire" to move the car along waypoints at the correct velocity. 
